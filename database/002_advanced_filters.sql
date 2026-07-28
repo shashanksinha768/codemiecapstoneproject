@@ -3,8 +3,9 @@
 
 PRAGMA foreign_keys = ON;
 
-ALTER TABLE accommodations ADD COLUMN property_type TEXT;
-ALTER TABLE accommodations ADD COLUMN review_score REAL;
+-- Run once on a fresh DB. If columns already exist, SQLite will error — that is expected and safe to ignore.
+ALTER TABLE accommodations ADD COLUMN property_type TEXT CHECK(property_type IN ('hotel','villa','apartment','hostel'));
+ALTER TABLE accommodations ADD COLUMN review_score REAL CHECK(review_score IS NULL OR (review_score >= 0 AND review_score <= 10));
 
 CREATE TABLE IF NOT EXISTS amenities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
