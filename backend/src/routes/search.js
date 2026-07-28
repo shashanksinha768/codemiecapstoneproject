@@ -11,11 +11,13 @@ function createSearchRouter(db) {
     const errors = validateFilters(req.query);
     if (errors.length > 0) return res.status(400).json({ errors });
 
-    const { sql, params } = buildSearchQuery(req.query);
-    db.all(sql, params, (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Search failed' });
+    try {
+      const { sql, params } = buildSearchQuery(req.query);
+      const rows = db.prepare(sql).all(...params);
       return res.json({ results: rows });
-    });
+    } catch (err) {
+      return res.status(500).json({ error: 'Search failed', detail: err.message });
+    }
   });
 
   return router;
