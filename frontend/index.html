@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Accommodation Search</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; color: #111; }
+    header { background: #1d4ed8; color: white; padding: 16px 24px; }
+    header h1 { font-size: 1.4rem; }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; display: flex; gap: 24px; }
+    .sidebar { width: 260px; flex-shrink: 0; }
+    .main { flex: 1; }
+    .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
+    .card h2 { font-size: 1rem; margin-bottom: 12px; color: #374151; }
+    .filter-group { margin-bottom: 16px; }
+    .filter-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #374151; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; margin-bottom: 4px; cursor: pointer; }
+    .checkbox-row input { cursor: pointer; }
+    select, input[type="text"] { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
+    .btn { background: #1d4ed8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; width: 100%; margin-top: 8px; }
+    .btn:hover { background: #1e40af; }
+    .btn-clear { background: #6b7280; margin-top: 4px; }
+    .result-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .result-card h3 { font-size: 1rem; margin-bottom: 4px; }
+    .result-card .meta { font-size: 0.85rem; color: #6b7280; }
+    .badge { display: inline-block; background: #eff6ff; color: #1d4ed8; border-radius: 12px; padding: 2px 10px; font-size: 0.8rem; margin: 2px; }
+    .score { font-size: 1.2rem; font-weight: 700; color: #059669; }
+    .price { font-size: 1rem; color: #374151; font-weight: 600; }
+    .empty { text-align: center; color: #9ca3af; padding: 40px; }
+    .loading { text-align: center; padding: 40px; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <header><h1>Travel Accommodation Search</h1></header>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="card">
+        <h2>Search</h2>
+        <div class="filter-group">
+          <label>Destination</label>
+          <input type="text" id="destination" placeholder="e.g. Paris" />
+        </div>
+        <h2>Advanced Filters</h2>
+        <div class="filter-group">
+          <label>Amenities</label>
+          <div id="amenities-list"><span class="meta">Loading...</span></div>
+        </div>
+        <div class="filter-group">
+          <label>Property Type</label>
+          <label class="checkbox-row"><input type="checkbox" value="hotel" class="prop-type" /> Hotel</label>
+          <label class="checkbox-row"><input type="checkbox" value="villa" class="prop-type" /> Villa</label>
+          <label class="checkbox-row"><input type="checkbox" value="apartment" class="prop-type" /> Apartment</label>
+          <label class="checkbox-row"><input type="checkbox" value="hostel" class="prop-type" /> Hostel</label>
+        </div>
+        <div class="filter-group">
+          <label>Min Review Score</label>
+          <select id="min-score">
+            <option value="">Any</option>
+            <option value="6">6+</option>
+            <option value="7">7+</option>
+            <option value="8">8+</option>
+            <option value="9">9+</option>
+          </select>
+        </div>
+        <button class="btn" onclick="search()">Search</button>
+        <button class="btn btn-clear" onclick="clearFilters()">Clear Filters</button>
+      </div>
+    </aside>
+    <main class="main">
+      <div id="results"><div class="loading">Enter search criteria and click Search.</div></div>
+    </main>
+  </div>
+  <script>
+    const API = 'http://localhost:3001/api';
+
+    async function loadAmenities() {
+      try {
+        const res = await fetch(`${API}/amenities`);
+        const { amenities } = await res.json();
+        const container = document.getElementById('amenities-list');
+        container.innerHTML = amenities.map(a =>
+          `<label class="checkbox-row"><input type="checkbox" value="${a.code}" class="amenity-cb" /> ${a.name}</label>`
+        ).join('');
+      } catch (e) {
+        document.getElementById('amenities-list').innerHTML = '<span class="meta">Could not load</span>';
+      }
+    }
+
+    async function search() {
+      const params = new URLSearchParams();
+      const dest = document.getElementById('destination').value.trim();
+      if (dest) params.set('destination', dest);
+
+      const amenities = [...document.querySelectorAll('.amenity-cb:checked')].map(c => c.value);
+      if (amenities.length) params.set('amenities', amenities.join(','));
+
+      const propTypes = [...document.querySelectorAll('.prop-type:checked')].map(c => c.value);
+      if (propTypes.length) params.set('propertyTypes', propTypes.join(','));
+
+      const score = document.getElementById('min-score').value;
+      if (score) params.set('minReviewScore', score);
+
+      const container = document.getElementById('results');
+      container.innerHTML = '<div class="loading">Searching...</div>';
+
+      try {
+        const res = await fetch(`${API}/search?${params}`);
+        const data = await res.json();
+        if (!res.ok) {
+          container.innerHTML = `<div class="empty">Error: ${JSON.stringify(data.errors || data.error)}</div>`;
+          return;
+        }
+        renderResults(data.results);
+      } catch (e) {
+        container.innerHTML = '<div class="empty">Could not connect to server.</div>';
+      }
+    }
+
+    function renderResults(results) {
+      const container = document.getElementById('results');
+      if (!results.length) {
+        container.innerHTML = '<div class="empty">No accommodations found matching your filters.</div>';
+        return;
+      }
+      container.innerHTML = results.map(r => `
+        <div class="result-card">
+          <div>
+            <h3>${r.name}</h3>
+            <div class="meta">${r.destination} &bull; Up to ${r.max_passengers} guests</div>
+            <div style="margin-top:6px">
+              ${r.property_type ? `<span class="badge">${r.property_type}</span>` : ''}
+            </div>
+          </div>
+          <div style="text-align:right">
+            ${r.review_score ? `<div class="score">${r.review_score} ★</div>` : ''}
+            <div class="price">$${r.price_per_night}/night</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function clearFilters() {
+      document.getElementById('destination').value = '';
+      document.getElementById('min-score').value = '';
+      document.querySelectorAll('.amenity-cb, .prop-type').forEach(c => c.checked = false);
+      document.getElementById('results').innerHTML = '<div class="loading">Filters cleared. Click Search to show all.</div>';
+    }
+
+    loadAmenities();
+  </script>
+</body>
+</html>

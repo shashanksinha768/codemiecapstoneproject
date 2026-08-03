@@ -1,0 +1,37 @@
+/* frontend/src/styles/filters.css */
+
+.filtersPanel {
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  border-radius: 8px;
+  max-width: 320px;
+}
+
+.filterBlock {
+  margin-bottom: 16px;
+}
+
+.filterTitle {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.filterOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
