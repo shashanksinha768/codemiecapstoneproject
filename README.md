@@ -1,6 +1,6 @@
 # Travel Accommodation Search - Capstone Project
 
-Advanced search filters for travel accommodation (amenities, property type, review score).
+Advanced search filters for travel accommodation (amenities, property type, review score, price range).
 
 Jira Epic: EPMCDMETST-55964
 
@@ -16,6 +16,7 @@ Jira Epic: EPMCDMETST-55964
 
 ```bash
 sqlite3 backend/db.sqlite < database/002_advanced_filters.sql
+sqlite3 backend/db.sqlite < database/003_price_range_filter.sql
 sqlite3 backend/db.sqlite < database/seed_advanced_filters.sql
 ```
 
@@ -47,10 +48,27 @@ Search accommodations with optional advanced filters.
 | amenities | string | CSV of amenity codes e.g. `FREE_WIFI,BREAKFAST_INCLUDED` |
 | propertyTypes | string | CSV of types e.g. `hotel,villa` |
 | minReviewScore | number | Minimum review score e.g. `8` |
+| minPrice | number | Minimum price per night (non-negative) e.g. `100` |
+| maxPrice | number | Maximum price per night (non-negative) e.g. `250` |
+
+**Notes**
+
+- When both `minPrice` and `maxPrice` are provided, `minPrice` must be `<= maxPrice`.
+- Prices are matched against `accommodations.price_per_night`.
 
 ### GET /api/amenities
 
 Returns list of available amenities for the filter UI.
+
+## Frontend
+
+The price range filter UI is implemented as a new component:
+
+- `frontend/src/components/filters/PriceRangeFilter.jsx`
+
+It is composed into the advanced filters sidebar via:
+
+- `frontend/src/components/filters/AdvancedFiltersPanel.jsx`
 
 ## How to Run Tests
 
@@ -64,69 +82,9 @@ npx playwright test
 
 - [Implementation Plan](implementation-plan.md)
 - Confluence Space: SC
-# Travel Accommodation Search – Capstone Project
 
-## Project overview
-This project is a basic online accommodation booking app that allows users to browse and book accommodations. The current increment adds *Advanced Search Filters* to help users refine search results by:
-
-- Amenities (e.g. Free Wi-Fi, Breakfast included)
-- Property Type (e.g. Hotel, Villa)
-
-## Tech stack
-- Frontend: (see repo code for specific frameworks)
-- Testing: Playwright (E2!)
-- CI: GitHub (PR/branch-based workflow)
-
-## Documentatiom (Confluence)
-All SDLC artifacts for the Advanced Filters increment are published in Confluence (Space: SC):
-
-- FRD – Advanced Filters — Functional Requirements Document (FRD)
-  - https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/8224770/Advanced+Filters+Functional+Requirements+Document+FRD
-
-- Architecture
-  - https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/8552458/Advanced+Filters+-+Architecture+Document
-  - (legacy architecture page): https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/5996545/Architecture+Advanced+Accommodation+Search+Filters
-
-- Design
-  - HLD:  https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/8749058/Advanced+Filters+-+High-Level+Design+HLD 
-  - LLD:  https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/8847361/Advanced+Filters+-+Low-Level+Design+LLD 
-- Wireframes
-  - https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/8486929/Advanced+Filters+-+Wireframes
-
-- Test Report (Playwright)
-  - https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/8880129/Advanced+Filters+Test+Execution+Report+Playwright
-
-## Setup
-### Prerequisites
-- Git
-- Node.js (LTS)
-- npm (or yarn/pnmp if the repo uses it)
-
-### Install
-
-```bash
-git clone https://github.com/shashanksinha768/codemiecapstoneproject.git
-cd codemiecapstoneproject
-npm install
-```
-
-
-### Run the app (local)
-Commands may vary depending on the repo scripts. Try:
-
-```bash
-npm start
-```
-
-## How to run tests
-The automated E2E suite is written with Playwright. Try:
-
-```bash
-npm test
-# or, usually for playwright
-npx playwright test
-```
-
-
-## Related items
-- Jira: EPMCDMETST-57558, EPMCDMETST-57559, EPMCDMETST-57560
+### Price Range Filter design docs
+- Architecture Overview: https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/9699329/Architecture+Overview+-+Price+Range+Filter
+- HLD: https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/9732097/High-Level+Design+HLD+-+Price+Range+Filter
+- LLD: https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/9764865/Low-Level+Design+LLD+-+Price+Range+Filter
+- Wireframes: https://shashanksinha768.atlassian.net/wiki/spaces/SC/pages/9797633/Wireframes+-+Price+Range+Filter
